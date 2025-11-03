@@ -13,7 +13,12 @@ namespace KooliProjekt.Application.Data
         {
         }
 
-        public DbSet<ToDoList> ToDoLists { get; set; }
-        public DbSet<ToDoItem> ToDoItems { get; set; }
-    }
+        public DbSet<BeerSort> BeerSorts {get; set;} 
+        public DbSet<BeerBatch> BeerBatches { get; set; }
+        public DbSet<Ingredient> Ingredients  { get; set; }
+        public DbSet<BatchLog> BatchLogs  { get; set; }
+        public DbSet<Photo> Photos { get; set; }
+        public DbSet<TasteLog> TasteLogs  { get; set; }
+        public DbSet<User> Users { get; set; }
+}
 }
