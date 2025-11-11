@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.BatchLogs
 {
-    public class ListBatchLogsQueryHandler : IRequestHandler<ListBatchLogsQuery, OperationResult<IList<BatchLog>>>
+    public class ListBatchLogsQueryHandler : IRequestHandler<ListBatchLogsQuery, OperationResult<PagedResult<BatchLog>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -21,13 +21,13 @@ namespace KooliProjekt.Application.Features.BatchLogs
             _dbContext = dbContext;
         }
 
-        public async Task<OperationResult<IList<BatchLog>>> Handle(ListBatchLogsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<BatchLog>>> Handle(ListBatchLogsQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<IList<BatchLog>>();
+            var result = new OperationResult<PagedResult<BatchLog>>();
             result.Value = await _dbContext
                 .BatchLogs
                 .OrderBy(l => l.Date)
-                .ToListAsync(cancellationToken);
+                .GetPagedAsync(request.Page, request.PageSize);
 
             return result;
         }

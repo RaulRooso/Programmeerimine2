@@ -1,23 +1,22 @@
 ﻿using System.Threading.Tasks;
-using KooliProjekt.Application.Features.BeerBatches;
+using KooliProjekt.Application.Features.Users;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
 namespace KooliProjekt.WebAPI.Controllers
 {
-    public class BeerBatchesController : ApiControllerBase
+    public class UsersController : ApiControllerBase
     {
         private readonly IMediator _mediator;
 
-        public BeerBatchesController(IMediator mediator)
+        public UsersController(IMediator mediator)
         {
             _mediator = mediator;
         }
 
         [HttpGet]
-        public async Task<IActionResult> List([FromQuery] ListBeerBatchesQuery query)
+        public async Task<IActionResult> List([FromQuery] ListUsersQuery query)
         {
-            //var query = new ListBeerBatchesQuery();
             var response = await _mediator.Send(query);
 
             return Result(response);

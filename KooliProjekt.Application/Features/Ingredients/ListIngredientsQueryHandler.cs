@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Ingredients
 {
-    public class ListIngredientsQueryHandler : IRequestHandler<ListIngredientsQuery, OperationResult<IList<Ingredient>>>
+    public class ListIngredientsQueryHandler : IRequestHandler<ListIngredientsQuery, OperationResult<PagedResult<Ingredient>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -21,13 +21,13 @@ namespace KooliProjekt.Application.Features.Ingredients
             _dbContext = dbContext;
         }
 
-        public async Task<OperationResult<IList<Ingredient>>> Handle(ListIngredientsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<Ingredient>>> Handle(ListIngredientsQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<IList<Ingredient>>();
+            var result = new OperationResult<PagedResult<Ingredient>>();
             result.Value = await _dbContext
                 .Ingredients
                 .OrderBy(i => i.Name)
-                .ToListAsync(cancellationToken);
+                .GetPagedAsync(request.Page, request.PageSize);
 
             return result;
         }

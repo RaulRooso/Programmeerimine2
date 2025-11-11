@@ -1,18 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KooliProjekt.Application.Data
 {
     public class BeerBatch
     {
         public int Id { get; set; }
-        public DateTime Date { get; set; }
-        public string Description { get; set; }
-        public string Conclusion { get; set; }
 
+        [Required]
+        public DateTime Date { get; set; }
+
+        [StringLength(500)]
+        public string? Description { get; set; }
+
+        [StringLength(500)]
+        public string? Conclusion { get; set; }
+
+        [ForeignKey(nameof(BeerSort))]
         public int BeerSortId { get; set; }
         public BeerSort BeerSort { get; set; } = null!;
 

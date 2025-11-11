@@ -1,20 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KooliProjekt.Application.Data
 {
     public class Ingredient
     {
         public int Id { get; set; }
+
+        [Required, StringLength(100)]
         public string Name { get; set; }
-        public string Unit {  get; set; }
+
+        [Required, StringLength(20)]
+        public string Unit { get; set; }
+
+        [Column(TypeName = "decimal(18,4)")]
         public decimal UnitPrice { get; set; }
+
+        [Column(TypeName = "decimal(18,4)")]
         public decimal Quantity { get; set; }
 
-        public int BeerBatchId {  get; set; }
+        public int BeerBatchId { get; set; }
         public BeerBatch BeerBatch { get; set; } = null!;
     }
 }

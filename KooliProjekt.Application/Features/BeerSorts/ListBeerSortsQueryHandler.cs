@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.BeerSorts
 {
-    public class ListBeerSortsQueryHandler : IRequestHandler<ListBeerSortsQuery, OperationResult<IList<BeerSort>>>
+    public class ListBeerSortsQueryHandler : IRequestHandler<ListBeerSortsQuery, OperationResult<PagedResult<BeerSort>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -21,16 +21,16 @@ namespace KooliProjekt.Application.Features.BeerSorts
             _dbContext = dbContext;
         }
 
-        public async Task<OperationResult<IList<BeerSort>>> Handle(ListBeerSortsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<BeerSort>>> Handle(ListBeerSortsQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<IList<BeerSort>>();
+            var result = new OperationResult<PagedResult<BeerSort>>();
             Console.WriteLine("----");
             Console.WriteLine("sort list query handler enne p2ringu tegemist");
             Console.WriteLine("----");
             result.Value = await _dbContext
                 .BeerSorts
                 .OrderBy(b => b.Name)
-                .ToListAsync(cancellationToken);
+                .GetPagedAsync(request.Page, request.PageSize);
 
             return result;
         }

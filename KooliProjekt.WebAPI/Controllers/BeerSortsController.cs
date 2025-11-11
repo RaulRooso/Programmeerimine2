@@ -16,12 +16,12 @@ namespace KooliProjekt.WebAPI.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> List()
+        public async Task<IActionResult> List([FromQuery] ListBeerSortsQuery query)
         {
             Console.WriteLine("---");
             Console.WriteLine("Joudsime beer list controllerisse");
             Console.WriteLine("----");
-            var query = new ListBeerSortsQuery();
+            //var query = new ListBeerSortsQuery();
             var result = await _mediator.Send(query);
 
             Console.WriteLine("----");

@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.TasteLogs
 {
-    public class ListTasteLogsQueryHandler : IRequestHandler<ListTasteLogsQuery, OperationResult<IList<TasteLog>>>
+    public class ListTasteLogsQueryHandler : IRequestHandler<ListTasteLogsQuery, OperationResult<PagedResult<TasteLog>>>
     {
         private readonly ApplicationDbContext _dbContext;
 
@@ -21,13 +21,13 @@ namespace KooliProjekt.Application.Features.TasteLogs
             _dbContext = dbContext;
         }
 
-        public async Task<OperationResult<IList<TasteLog>>> Handle(ListTasteLogsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<PagedResult<TasteLog>>> Handle(ListTasteLogsQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<IList<TasteLog>>();
+            var result = new OperationResult<PagedResult<TasteLog>>();
             result.Value = await _dbContext
                 .TasteLogs
                 .OrderBy(t => t.Date)
-                .ToListAsync(cancellationToken);
+                .GetPagedAsync(request.Page, request.PageSize);
 
             return result;
         }
