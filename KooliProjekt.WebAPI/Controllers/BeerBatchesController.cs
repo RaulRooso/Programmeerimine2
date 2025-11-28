@@ -15,11 +15,18 @@ namespace KooliProjekt.WebAPI.Controllers
         }
 
         [HttpGet]
+        [Route("List")]
         public async Task<IActionResult> List([FromQuery] ListBeerBatchesQuery query)
         {
-            //var query = new ListBeerBatchesQuery();
             var response = await _mediator.Send(query);
+            return Result(response);
+        }
 
+        [HttpDelete]
+        [Route("Delete")]
+        public async Task<IActionResult> Delete([FromQuery] DeleteBeerBatchCommand command)
+        {
+            var response = await _mediator.Send(command);
             return Result(response);
         }
     }

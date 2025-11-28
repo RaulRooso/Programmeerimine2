@@ -15,11 +15,19 @@ namespace KooliProjekt.WebAPI.Controllers
         }
 
         [HttpGet]
+        [Route("List")]
         public async Task<IActionResult> List([FromQuery] ListPhotosQuery query)
         {
-            var response = await _mediator.Send(query);
+            var result = await _mediator.Send(query);
+            return Result(result);
+        }
 
-            return Result(response);
+        [HttpDelete]
+        [Route("Delete")]
+        public async Task<IActionResult> Delete([FromQuery] DeletePhotoCommand command)
+        {
+            var result = await _mediator.Send(command);
+            return Result(result);
         }
     }
 }
