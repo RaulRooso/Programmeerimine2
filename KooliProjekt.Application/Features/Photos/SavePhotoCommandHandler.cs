@@ -1,18 +1,19 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Application.Features.Photos
 {
     public class SavePhotoCommandHandler : IRequestHandler<SavePhotoCommand, OperationResult>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IPhotoRepository _photoRepository;
 
-        public SavePhotoCommandHandler(ApplicationDbContext dbContext)
+        public SavePhotoCommandHandler(IPhotoRepository photoRepository)
         {
-            _dbContext = dbContext;
+            _photoRepository = photoRepository;
         }
 
         public async Task<OperationResult> Handle(SavePhotoCommand request, CancellationToken cancellationToken)
@@ -20,20 +21,16 @@ namespace KooliProjekt.Application.Features.Photos
             var result = new OperationResult();
 
             var photo = new Photo();
-            if (request.Id == 0)
+            if (request.Id != 0)
             {
-                await _dbContext.Photos.AddAsync(photo, cancellationToken);
-            }
-            else
-            {
-                photo = await _dbContext.Photos.FindAsync(new object[] { request.Id }, cancellationToken);
+                photo = await _photoRepository.GetByIdAsync(request.Id);
             }
 
-            photo.BeerBatchId = request.BeerBatchId;
-            photo.FilePath = request.FilePath;
             photo.Description = request.Description;
+            photo.FilePath = request.FilePath;
+            photo.BeerBatchId = request.BeerBatchId;
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _photoRepository.SaveAsync(photo);
 
             return result;
         }

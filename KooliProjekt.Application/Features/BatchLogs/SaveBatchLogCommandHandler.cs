@@ -1,40 +1,37 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Application.Features.BatchLogs
 {
     public class SaveBatchLogCommandHandler : IRequestHandler<SaveBatchLogCommand, OperationResult>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IBatchLogRepository _batchLogRepository;
 
-        public SaveBatchLogCommandHandler(ApplicationDbContext dbContext)
+        public SaveBatchLogCommandHandler(IBatchLogRepository batchLogRepository)
         {
-            _dbContext = dbContext;
+            _batchLogRepository = batchLogRepository;
         }
 
         public async Task<OperationResult> Handle(SaveBatchLogCommand request, CancellationToken cancellationToken)
         {
             var result = new OperationResult();
 
-            var log = new BatchLog();
-            if (request.Id == 0)
+            var batchLog = new BatchLog();
+            if (request.Id != 0)
             {
-                await _dbContext.BatchLogs.AddAsync(log, cancellationToken);
-            }
-            else
-            {
-                log = await _dbContext.BatchLogs.FindAsync(new object[] { request.Id }, cancellationToken);
+                batchLog = await _batchLogRepository.GetByIdAsync(request.Id);
             }
 
-            log.Date = request.Date;
-            log.Description = request.Description;
-            log.UserId = request.UserId;
-            log.BeerBatchId = request.BeerBatchId;
+            batchLog.Date = request.Date;
+            batchLog.Description = request.Description;
+            batchLog.UserId = request.UserId;
+            batchLog.BeerBatchId = request.BeerBatchId;
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _batchLogRepository.SaveAsync(batchLog);
 
             return result;
         }

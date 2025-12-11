@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace KooliProjekt.Application.Features.BeerSorts
 {
-    public class ListBeerSortsQuery : IRequest<OperationResult<PagedResult<BeerSort>>>
+    public class ListBeerSortsQuery : IRequest<OperationResult<object>>
     {
         public int Page { get; set; }
         public int PageSize { get; set; }

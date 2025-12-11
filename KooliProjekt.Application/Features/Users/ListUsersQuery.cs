@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace KooliProjekt.Application.Features.Users
 {
-    public class ListUsersQuery : IRequest<OperationResult<PagedResult<User>>>
+    public class ListUsersQuery : IRequest<OperationResult<object>>
     {
         public int Page { get; set; }
         public int PageSize { get; set; }

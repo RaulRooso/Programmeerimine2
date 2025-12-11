@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace KooliProjekt.Application.Features.Photos
 {
-    public class ListPhotosQuery : IRequest<OperationResult<PagedResult<Photo>>>
+    public class ListPhotosQuery : IRequest<OperationResult<object>>
     {
         public int Page { get; set; }
         public int PageSize { get; set; }

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace KooliProjekt.Application.Features.Ingredients
 {
-    public class ListIngredientsQuery : IRequest<OperationResult<PagedResult<Ingredient>>>
+    public class ListIngredientsQuery : IRequest<OperationResult<object>>
     {
         public int Page { get; set; }
         public int PageSize { get; set; }

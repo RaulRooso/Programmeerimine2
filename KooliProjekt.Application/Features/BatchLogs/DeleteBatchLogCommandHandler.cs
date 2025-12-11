@@ -1,29 +1,29 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.BatchLogs
 {
     public class DeleteBatchLogCommandHandler : IRequestHandler<DeleteBatchLogCommand, OperationResult>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IBatchLogRepository _batchLogRepository;
 
-        public DeleteBatchLogCommandHandler(ApplicationDbContext dbContext)
+        public DeleteBatchLogCommandHandler(IBatchLogRepository batchLogRepository)
         {
-            _dbContext = dbContext;
+            _batchLogRepository = batchLogRepository;
         }
 
         public async Task<OperationResult> Handle(DeleteBatchLogCommand request, CancellationToken cancellationToken)
         {
             var result = new OperationResult();
+            var batchLog = await _batchLogRepository.GetByIdAsync(request.Id);
 
-            await _dbContext.BatchLogs
-                .Where(l => l.Id == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            if (batchLog != null)
+            {
+                await _batchLogRepository.DeleteAsync(batchLog);
+            }
 
             return result;
         }

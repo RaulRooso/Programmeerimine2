@@ -1,18 +1,19 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace KooliProjekt.Application.Features.TasteLogs
 {
     public class SaveTasteLogCommandHandler : IRequestHandler<SaveTasteLogCommand, OperationResult>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly ITasteLogRepository _tasteLogRepository;
 
-        public SaveTasteLogCommandHandler(ApplicationDbContext dbContext)
+        public SaveTasteLogCommandHandler(ITasteLogRepository tasteLogRepository)
         {
-            _dbContext = dbContext;
+            _tasteLogRepository = tasteLogRepository;
         }
 
         public async Task<OperationResult> Handle(SaveTasteLogCommand request, CancellationToken cancellationToken)
@@ -20,22 +21,18 @@ namespace KooliProjekt.Application.Features.TasteLogs
             var result = new OperationResult();
 
             var tasteLog = new TasteLog();
-            if (request.Id == 0)
+            if (request.Id != 0)
             {
-                await _dbContext.TasteLogs.AddAsync(tasteLog, cancellationToken);
-            }
-            else
-            {
-                tasteLog = await _dbContext.TasteLogs.FindAsync(new object[] { request.Id }, cancellationToken);
+                tasteLog = await _tasteLogRepository.GetByIdAsync(request.Id);
             }
 
-            tasteLog.BeerBatchId = request.BeerBatchId;
-            tasteLog.UserId = request.UserId;
             tasteLog.Date = request.Date;
             tasteLog.Description = request.Description;
             tasteLog.Rating = request.Rating;
+            tasteLog.UserId = request.UserId;
+            tasteLog.BeerBatchId = request.BeerBatchId;
 
-            await _dbContext.SaveChangesAsync(cancellationToken);
+            await _tasteLogRepository.SaveAsync(tasteLog);
 
             return result;
         }

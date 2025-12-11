@@ -1,33 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
-using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.BatchLogs
 {
-    public class ListBatchLogsQueryHandler : IRequestHandler<ListBatchLogsQuery, OperationResult<PagedResult<BatchLog>>>
+    public class ListBatchLogsQueryHandler : IRequestHandler<ListBatchLogsQuery, OperationResult<object>>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IBatchLogRepository _batchLogRepository;
 
-        public ListBatchLogsQueryHandler(ApplicationDbContext dbContext)
+        public ListBatchLogsQueryHandler(IBatchLogRepository batchLogRepository)
         {
-            _dbContext = dbContext;
+            _batchLogRepository = batchLogRepository;
         }
 
-        public async Task<OperationResult<PagedResult<BatchLog>>> Handle(ListBatchLogsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<object>> Handle(ListBatchLogsQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<PagedResult<BatchLog>>();
-            result.Value = await _dbContext
-                .BatchLogs
-                .OrderBy(l => l.Date)
-                .GetPagedAsync(request.Page, request.PageSize);
+            var result = new OperationResult<object>();
+            var batchLogs = await _batchLogRepository.ListAsync();
+
+            result.Value = batchLogs.Select(b => new
+            {
+                b.Id,
+                b.Date,
+                b.Description,
+                User = new { b.User.Id, b.User.Username },
+                BeerBatch = new { b.BeerBatch.Id, b.BeerBatch.Description }
+            });
 
             return result;
         }

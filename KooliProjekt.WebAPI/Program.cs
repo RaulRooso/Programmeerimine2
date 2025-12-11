@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using KooliProjekt.Application.Data.Repositories;
+
 
 namespace KooliProjekt.WebAPI
 {
@@ -37,6 +39,14 @@ namespace KooliProjekt.WebAPI
                 config.AddOpenBehavior(typeof(ValidationBehavior<,>));
                 config.AddOpenBehavior(typeof(TransactionalBehavior<,>));
             });
+            // Register repository classes
+            builder.Services.AddScoped<IBatchLogRepository, BatchLogRepository>();
+            builder.Services.AddScoped<IBeerBatchRepository, BeerBatchRepository>();
+            builder.Services.AddScoped<IBeerSortRepository, BeerSortRepository>();
+            builder.Services.AddScoped<IIngredientRepository, IngredientRepository>();
+            builder.Services.AddScoped<IPhotoRepository, PhotoRepository>();
+            builder.Services.AddScoped<ITasteLogRepository, TasteLogRepository>();
+            builder.Services.AddScoped<IUserRepository, UserRepository>();
 
             var app = builder.Build();
 

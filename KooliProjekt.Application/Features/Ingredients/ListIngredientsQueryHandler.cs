@@ -1,33 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
-using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Ingredients
 {
-    public class ListIngredientsQueryHandler : IRequestHandler<ListIngredientsQuery, OperationResult<PagedResult<Ingredient>>>
+    public class ListIngredientsQueryHandler : IRequestHandler<ListIngredientsQuery, OperationResult<object>>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IIngredientRepository _ingredientRepository;
 
-        public ListIngredientsQueryHandler(ApplicationDbContext dbContext)
+        public ListIngredientsQueryHandler(IIngredientRepository ingredientRepository)
         {
-            _dbContext = dbContext;
+            _ingredientRepository = ingredientRepository;
         }
 
-        public async Task<OperationResult<PagedResult<Ingredient>>> Handle(ListIngredientsQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<object>> Handle(ListIngredientsQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<PagedResult<Ingredient>>();
-            result.Value = await _dbContext
-                .Ingredients
-                .OrderBy(i => i.Name)
-                .GetPagedAsync(request.Page, request.PageSize);
+            var result = new OperationResult<object>();
+
+            var list = await _ingredientRepository.ListAsync();
+            result.Value = list;
 
             return result;
         }

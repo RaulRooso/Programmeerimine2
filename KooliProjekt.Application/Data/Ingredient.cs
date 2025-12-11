@@ -3,15 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KooliProjekt.Application.Data
 {
-    public class Ingredient
+    public class Ingredient : Entity
     {
-        public int Id { get; set; }
-
         [Required, StringLength(100)]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         [Required, StringLength(20)]
-        public string Unit { get; set; }
+        public string Unit { get; set; } = string.Empty;
 
         [Column(TypeName = "decimal(18,4)")]
         public decimal UnitPrice { get; set; }

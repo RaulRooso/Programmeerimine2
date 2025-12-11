@@ -4,10 +4,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KooliProjekt.Application.Data
 {
-    public class BatchLog
+    public class BatchLog : Entity
     {
-        public int Id { get; set; }
-
         [Required]
         public DateTime Date { get; set; }
 

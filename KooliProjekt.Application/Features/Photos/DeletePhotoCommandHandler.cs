@@ -1,29 +1,29 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Photos
 {
     public class DeletePhotoCommandHandler : IRequestHandler<DeletePhotoCommand, OperationResult>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IPhotoRepository _photoRepository;
 
-        public DeletePhotoCommandHandler(ApplicationDbContext dbContext)
+        public DeletePhotoCommandHandler(IPhotoRepository photoRepository)
         {
-            _dbContext = dbContext;
+            _photoRepository = photoRepository;
         }
 
         public async Task<OperationResult> Handle(DeletePhotoCommand request, CancellationToken cancellationToken)
         {
             var result = new OperationResult();
 
-            await _dbContext.Photos
-                .Where(p => p.Id == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            var photo = await _photoRepository.GetByIdAsync(request.Id);
+            if (photo != null)
+            {
+                await _photoRepository.DeleteAsync(photo);
+            }
 
             return result;
         }

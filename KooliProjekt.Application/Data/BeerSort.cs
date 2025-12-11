@@ -3,10 +3,8 @@ using System.ComponentModel.DataAnnotations;
 
 namespace KooliProjekt.Application.Data
 {
-    public class BeerSort
+    public class BeerSort : Entity
     {
-        public int Id { get; set; }
-
         [Required, StringLength(100)]
         public string Name { get; set; } = string.Empty;
 

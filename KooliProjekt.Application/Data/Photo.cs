@@ -3,10 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KooliProjekt.Application.Data
 {
-    public class Photo
+    public class Photo : Entity
     {
-        public int Id { get; set; }
-
         [StringLength(500)]
         public string? Description { get; set; }
 

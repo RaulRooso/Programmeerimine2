@@ -1,37 +1,30 @@
-﻿using System.Linq;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.BeerSorts
 {
     public class DeleteBeerSortCommandHandler : IRequestHandler<DeleteBeerSortCommand, OperationResult>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IBeerSortRepository _beerSortRepository;
 
-        public DeleteBeerSortCommandHandler(ApplicationDbContext dbContext)
+        public DeleteBeerSortCommandHandler(IBeerSortRepository beerSortRepository)
         {
-            _dbContext = dbContext;
+            _beerSortRepository = beerSortRepository;
         }
 
         public async Task<OperationResult> Handle(DeleteBeerSortCommand request, CancellationToken cancellationToken)
         {
             var result = new OperationResult();
 
-            // 1) delete BeerBatches, that assosiate with BeerSortiga
-            await _dbContext
-                .BeerBatches
-                .Where(b => b.BeerSortId == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            var beerSort = await _beerSortRepository.GetByIdAsync(request.Id);
 
-            // 2) delete BeerSort
-            await _dbContext
-                .BeerSorts
-                .Where(s => s.Id == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            if (beerSort != null)
+            {
+                await _beerSortRepository.DeleteAsync(beerSort);
+            }
 
             return result;
         }

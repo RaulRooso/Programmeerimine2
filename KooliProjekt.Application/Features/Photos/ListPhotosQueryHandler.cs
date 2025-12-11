@@ -1,33 +1,26 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
-using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Photos
 {
-    internal class ListPhotosQueryHandler : IRequestHandler<ListPhotosQuery, OperationResult<PagedResult<Photo>>>
+    public class ListPhotosQueryHandler : IRequestHandler<ListPhotosQuery, OperationResult<object>>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IPhotoRepository _photoRepository;
 
-        public ListPhotosQueryHandler(ApplicationDbContext dbContext)
+        public ListPhotosQueryHandler(IPhotoRepository photoRepository)
         {
-            _dbContext = dbContext;
+            _photoRepository = photoRepository;
         }
 
-        public async Task<OperationResult<PagedResult<Photo>>> Handle(ListPhotosQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<object>> Handle(ListPhotosQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<PagedResult<Photo>>();
-            result.Value = await _dbContext
-                .Photos
-                .OrderBy(p => p.BeerBatchId)
-                .GetPagedAsync(request.Page, request.PageSize);
+            var result = new OperationResult<object>();
+
+            var list = await _photoRepository.ListAsync();
+            result.Value = list;
 
             return result;
         }

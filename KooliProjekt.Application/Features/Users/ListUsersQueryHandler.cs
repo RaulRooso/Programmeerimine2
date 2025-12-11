@@ -1,33 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
-using KooliProjekt.Application.Infrastructure.Paging;
+using KooliProjekt.Application.Data.Repositories;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Users
 {
-    public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, OperationResult<PagedResult<User>>>
+    public class ListUsersQueryHandler : IRequestHandler<ListUsersQuery, OperationResult<object>>
     {
-        private readonly ApplicationDbContext _dbContext;
+        private readonly IUserRepository _userRepository;
 
-        public ListUsersQueryHandler(ApplicationDbContext dbContext)
+        public ListUsersQueryHandler(IUserRepository userRepository)
         {
-            _dbContext = dbContext;
+            _userRepository = userRepository;
         }
 
-        public async Task<OperationResult<PagedResult<User>>> Handle(ListUsersQuery request, CancellationToken cancellationToken)
+        public async Task<OperationResult<object>> Handle(ListUsersQuery request, CancellationToken cancellationToken)
         {
-            var result = new OperationResult<PagedResult<User>>();
-            result.Value = await _dbContext
-                .Users
-                .OrderBy(u => u.Username)
-                .GetPagedAsync(request.Page, request.PageSize);
+            var result = new OperationResult<object>();
+            var list = await _userRepository.ListAsync();
+            result.Value = list;
 
             return result;
         }

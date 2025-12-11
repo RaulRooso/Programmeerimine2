@@ -5,10 +5,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace KooliProjekt.Application.Data
 {
-    public class BeerBatch
+    public class BeerBatch : Entity
     {
-        public int Id { get; set; }
-
         [Required]
         public DateTime Date { get; set; }
 
