@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.Photos
 {
-    internal class ListPhotosQueryHandler : IRequestHandler<ListPhotosQuery, OperationResult<PagedResult<Photo>>>
+    public class ListPhotosQueryHandler : IRequestHandler<ListPhotosQuery, OperationResult<PagedResult<Photo>>>
     {
         private readonly ApplicationDbContext _dbContext;
 

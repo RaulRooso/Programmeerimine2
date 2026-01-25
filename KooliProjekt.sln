@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KooliProjekt.Application", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KooliProjekt.WebAPI", "KooliProjekt.WebAPI\KooliProjekt.WebAPI.csproj", "{5A2101DC-D650-6EBB-6EBB-3FE62A3E9647}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KooliProjekt.Application.UnitTests", "KooliProjekt.Application.UnitTests\KooliProjekt.Application.UnitTests.csproj", "{8F78C8BA-34CF-4C13-3FF5-E7CD2C67F95A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{5A2101DC-D650-6EBB-6EBB-3FE62A3E9647}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5A2101DC-D650-6EBB-6EBB-3FE62A3E9647}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5A2101DC-D650-6EBB-6EBB-3FE62A3E9647}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8F78C8BA-34CF-4C13-3FF5-E7CD2C67F95A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8F78C8BA-34CF-4C13-3FF5-E7CD2C67F95A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8F78C8BA-34CF-4C13-3FF5-E7CD2C67F95A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8F78C8BA-34CF-4C13-3FF5-E7CD2C67F95A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
