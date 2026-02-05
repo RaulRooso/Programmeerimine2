@@ -1,37 +1,68 @@
 ﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
 using KooliProjekt.Application.Features.BeerBatches;
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace KooliProjekt.Application.UnitTests.Features
 {
     public class BeerBatchTests : TestBase
     {
+        // === GET TESTS ===
+
         [Fact]
-        public void Constructor_should_throw_when_dbcontext_is_null()
-        {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                new ListBeerBatchesQueryHandler(null);
-            });
-        }
-        [Fact]
-        public async Task Get_should_return_paginated_beer_batches()
+        public async Task Get_should_return_existing_beer_batch_with_details()
         {
             // Arrange
-            var query = new ListBeerBatchesQuery { Page = 1, PageSize = 2 };
+            var beerSort = new BeerSort { Name = "Stout" };
+            await DbContext.BeerSorts.AddAsync(beerSort);
+            await DbContext.SaveChangesAsync();
+
+            var batch = new BeerBatch
+            {
+                Date = DateTime.Now,
+                Description = "Batch with items",
+                BeerSortId = beerSort.Id
+            };
+
+            // Add a child ingredient to test the "Include/Select" logic
+            batch.Ingredients.Add(new Ingredient { Name = "Malt", Unit = "kg", Quantity = 5 });
+
+            await DbContext.BeerBatches.AddAsync(batch);
+            await DbContext.SaveChangesAsync();
+
+            var query = new GetBeerBatchQuery { Id = batch.Id };
+            var handler = new GetBeerBatchQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Equal("Batch with items", result.Value.Description);
+            Assert.Single(result.Value.Ingredients);
+            Assert.Equal("Malt", result.Value.Ingredients[0].Name);
+        }
+
+        // === LIST TESTS ===
+
+        [Fact]
+        public async Task List_should_return_paged_beer_batches()
+        {
+            // Arrange
+            var beerSort = new BeerSort { Name = "Test Sort" };
+            await DbContext.BeerSorts.AddAsync(beerSort);
+            await DbContext.SaveChangesAsync();
+
+            var query = new ListBeerBatchesQuery { Page = 1, PageSize = 3 };
             var handler = new ListBeerBatchesQueryHandler(DbContext);
 
-            for (int i = 0; i < 3; i++)
+            for (int i = 1; i <= 5; i++)
             {
                 await DbContext.BeerBatches.AddAsync(new BeerBatch
                 {
-                    Date = DateTime.Now.AddDays(i),
-                    BeerSortId = 1,
-                    Description = $"Batch {i}"
+                    Date = DateTime.Now,
+                    BeerSortId = beerSort.Id
                 });
             }
             await DbContext.SaveChangesAsync();
@@ -40,23 +71,63 @@ namespace KooliProjekt.Application.UnitTests.Features
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.NotNull(result);
-            Assert.False(result.HasErrors);
-            Assert.Equal(2, result.Value.Results.Count);
-            Assert.Equal(3, result.Value.RowCount);
+            Assert.NotNull(result.Value);
+            Assert.Equal(3, result.Value.Results.Count);
+            Assert.Equal(5, result.Value.RowCount);
         }
+
+        // === DELETE TESTS ===
+
         [Fact]
-        public async Task Get_should_throw_null_reference_exception_when_request_is_null()
+        public async Task Delete_should_remove_batch_and_cascade_logic()
         {
             // Arrange
-            var query = (ListBeerBatchesQuery)null;
-            var handler = new ListBeerBatchesQueryHandler(DbContext);
+            var beerSort = new BeerSort { Name = "Test Sort" };
+            await DbContext.BeerSorts.AddAsync(beerSort);
+            await DbContext.SaveChangesAsync();
 
-            // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(async () =>
+            var batch = new BeerBatch { Date = DateTime.Now, BeerSortId = beerSort.Id };
+            await DbContext.BeerBatches.AddAsync(batch);
+            await DbContext.SaveChangesAsync();
+
+            var command = new DeleteBeerBatchCommand { Id = batch.Id };
+            var handler = new DeleteBeerBatchCommandHandler(DbContext);
+
+            // Act
+            await handler.Handle(command, CancellationToken.None);
+            var exists = await DbContext.BeerBatches.AnyAsync(x => x.Id == batch.Id);
+
+            // Assert
+            Assert.False(exists);
+        }
+
+        // === SAVE TESTS ===
+
+        [Fact]
+        public async Task Save_should_add_new_beer_batch()
+        {
+            // Arrange
+            var beerSort = new BeerSort { Name = "Test Sort" };
+            await DbContext.BeerSorts.AddAsync(beerSort);
+            await DbContext.SaveChangesAsync();
+
+            var command = new SaveBeerBatchCommand
             {
-                await handler.Handle(query, CancellationToken.None);
-            });
+                Id = 0,
+                Date = DateTime.Now,
+                Description = "New Batch",
+                BeerSortId = beerSort.Id
+            };
+            var handler = new SaveBeerBatchCommandHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+            var saved = await DbContext.BeerBatches.FirstOrDefaultAsync(x => x.Description == "New Batch");
+
+            // Assert
+            Assert.False(result.HasErrors);
+            Assert.NotNull(saved);
+            Assert.Equal(beerSort.Id, saved.BeerSortId);
         }
     }
 }

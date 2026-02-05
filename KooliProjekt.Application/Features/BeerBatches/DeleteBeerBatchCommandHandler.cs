@@ -21,27 +21,31 @@ namespace KooliProjekt.Application.Features.BeerBatches
         {
             var result = new OperationResult();
 
-            // kdelete relations:
-            await _dbContext.Ingredients
-                .Where(i => i.BeerBatchId == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            // 1. Fetch the batch AND all related data
+            var batch = await _dbContext.BeerBatches
+                .Include(b => b.Ingredients)
+                .Include(b => b.Logs)
+                .Include(b => b.TasteLogs)
+                .Include(b => b.Photos)
+                .FirstOrDefaultAsync(b => b.Id == request.Id, cancellationToken);
 
-            await _dbContext.BatchLogs
-                .Where(l => l.BeerBatchId == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            // 2. If it's already gone, we are done
+            if (batch == null)
+            {
+                return result;
+            }
 
-            await _dbContext.TasteLogs
-                .Where(t => t.BeerBatchId == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            // 3. Remove all child relations manually (to satisfy InMemory provider)
+            _dbContext.Ingredients.RemoveRange(batch.Ingredients);
+            _dbContext.BatchLogs.RemoveRange(batch.Logs);
+            _dbContext.TasteLogs.RemoveRange(batch.TasteLogs);
+            _dbContext.Photos.RemoveRange(batch.Photos);
 
-            await _dbContext.Photos
-                .Where(p => p.BeerBatchId == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            // 4. Remove the batch itself
+            _dbContext.BeerBatches.Remove(batch);
 
-            // delete batches
-            await _dbContext.BeerBatches
-                .Where(b => b.Id == request.Id)
-                .ExecuteDeleteAsync(cancellationToken);
+            // 5. Save all changes at once
+            await _dbContext.SaveChangesAsync(cancellationToken);
 
             return result;
         }

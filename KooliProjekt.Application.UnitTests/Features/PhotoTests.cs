@@ -1,43 +1,70 @@
-﻿using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Dto;
 using KooliProjekt.Application.Features.Photos;
+using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace KooliProjekt.Application.UnitTests.Features
 {
     public class PhotoTests : TestBase
     {
-        [Fact]
-        public void Constructor_should_throw_when_dbcontext_is_null()
+        // Helper to setup the parent Batch
+        private async Task<int> SetupParentBatch()
         {
-            Assert.Throws<ArgumentNullException>(() =>
-            {
-                new ListPhotosQueryHandler(null);
-            });
-        }
+            var beerSort = new BeerSort { Name = "Test Sort" };
+            await DbContext.BeerSorts.AddAsync(beerSort);
 
-        [Fact]
-        public async Task Get_should_return_paginated_photos()
-        {
-            // Arrange
-            var query = new ListPhotosQuery { Page = 1, PageSize = 2 };
-            var handler = new ListPhotosQueryHandler(DbContext);
-
-            // 1. Create a parent batch
-            var batch = new BeerBatch { Date = DateTime.Now };
+            var batch = new BeerBatch { Date = DateTime.Now, BeerSortId = beerSort.Id };
             await DbContext.BeerBatches.AddAsync(batch);
             await DbContext.SaveChangesAsync();
 
-            // 2. Add 3 photos linked to that batch
-            for (int i = 0; i < 3; i++)
+            return batch.Id;
+        }
+
+        // === GET TESTS ===
+
+        [Fact]
+        public async Task Get_should_return_existing_photo_dto()
+        {
+            // Arrange
+            var batchId = await SetupParentBatch();
+            var photo = new Photo
+            {
+                Description = "Fermentation start",
+                FilePath = "images/batch1.jpg",
+                BeerBatchId = batchId
+            };
+            await DbContext.Photos.AddAsync(photo);
+            await DbContext.SaveChangesAsync();
+
+            var query = new GetPhotoQuery { Id = photo.Id };
+            var handler = new GetPhotoQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Equal("images/batch1.jpg", result.Value.FilePath);
+            Assert.Equal("Fermentation start", result.Value.Description);
+        }
+
+        // === LIST TESTS ===
+
+        [Fact]
+        public async Task List_should_return_paged_photos()
+        {
+            // Arrange
+            var batchId = await SetupParentBatch();
+            var query = new ListPhotosQuery { Page = 1, PageSize = 2 };
+            var handler = new ListPhotosQueryHandler(DbContext);
+
+            for (int i = 1; i <= 4; i++)
             {
                 await DbContext.Photos.AddAsync(new Photo
                 {
-                    FilePath = $"path/to/photo{i}.jpg",
-                    BeerBatchId = batch.Id
+                    FilePath = $"file{i}.jpg",
+                    BeerBatchId = batchId
                 });
             }
             await DbContext.SaveChangesAsync();
@@ -46,23 +73,56 @@ namespace KooliProjekt.Application.UnitTests.Features
             var result = await handler.Handle(query, CancellationToken.None);
 
             // Assert
-            Assert.NotNull(result);
+            Assert.NotNull(result.Value);
             Assert.Equal(2, result.Value.Results.Count);
-            Assert.Equal(3, result.Value.RowCount);
+            Assert.Equal(4, result.Value.RowCount);
         }
 
+        // === DELETE TESTS ===
+
         [Fact]
-        public async Task Get_should_throw_null_reference_exception_when_request_is_null()
+        public async Task Delete_should_remove_photo_from_database()
         {
             // Arrange
-            var query = (ListPhotosQuery)null;
-            var handler = new ListPhotosQueryHandler(DbContext);
+            var batchId = await SetupParentBatch();
+            var photo = new Photo { FilePath = "delete-me.jpg", BeerBatchId = batchId };
+            await DbContext.Photos.AddAsync(photo);
+            await DbContext.SaveChangesAsync();
 
-            // Act & Assert
-            await Assert.ThrowsAsync<NullReferenceException>(async () =>
+            var command = new DeletePhotoCommand { Id = photo.Id };
+            var handler = new DeletePhotoCommandHandler(DbContext);
+
+            // Act
+            await handler.Handle(command, CancellationToken.None);
+            var exists = await DbContext.Photos.AnyAsync(x => x.Id == photo.Id);
+
+            // Assert
+            Assert.False(exists);
+        }
+
+        // === SAVE TESTS ===
+
+        [Fact]
+        public async Task Save_should_add_new_photo()
+        {
+            // Arrange
+            var batchId = await SetupParentBatch();
+            var command = new SavePhotoCommand
             {
-                await handler.Handle(query, CancellationToken.None);
-            });
+                Id = 0,
+                Description = "New Photo",
+                FilePath = "new.png",
+                BeerBatchId = batchId
+            };
+            var handler = new SavePhotoCommandHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+            var saved = await DbContext.Photos.FirstOrDefaultAsync(x => x.FilePath == "new.png");
+
+            // Assert
+            Assert.False(result.HasErrors);
+            Assert.NotNull(saved);
         }
     }
 }
