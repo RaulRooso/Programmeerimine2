@@ -1,7 +1,8 @@
 ﻿using KooliProjekt.Application.Data;
-using KooliProjekt.Application.Features.BeerSorts;
 using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Features.BeerSorts;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using Xunit;
 
 namespace KooliProjekt.Application.UnitTests.Features
@@ -51,6 +52,47 @@ namespace KooliProjekt.Application.UnitTests.Features
         // === LIST TESTS ===
 
         [Fact]
+        public void List_should_throw_when_dbcontext_is_null()
+        {
+            Assert.Throws<ArgumentNullException>(() =>
+            {
+                new ListBeerSortsQueryHandler(null);
+            });
+        }
+
+        [Fact]
+        public async Task List_should_throw_when_request_is_null()
+        {
+            // Arrange
+            var request = (ListBeerSortsQuery)null;
+            var handler = new ListBeerSortsQueryHandler(DbContext);
+
+            // Act && Assert
+            var ex = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+            {
+                await handler.Handle(request, CancellationToken.None);
+            });
+            Assert.Equal("request", ex.ParamName);
+        }
+
+        [Theory]
+        [InlineData(0, 10)]
+        [InlineData(-1, 5)]
+        public async Task List_should_return_empty_operation_result_when_page_or_size_is_invalid(int page, int pageSize)
+        {
+            // Arrange
+            var query = new ListBeerSortsQuery { Page = page, PageSize = pageSize };
+            var handler = new ListBeerSortsQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result);
+            Assert.Null(result.Value);
+        }
+
+        [Fact]
         public async Task List_should_return_paged_beer_sorts()
         {
             // Arrange
@@ -70,6 +112,27 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.NotNull(result.Value);
             Assert.Equal(5, result.Value.Results.Count);
             Assert.Equal(10, result.Value.RowCount);
+        }
+
+        [Fact]
+        public async Task List_should_filter_by_name_when_search_term_is_provided()
+        {
+            // Arrange
+            await DbContext.BeerSorts.AddAsync(new BeerSort { Name = "IPA" });
+            await DbContext.BeerSorts.AddAsync(new BeerSort { Name = "Stout" });
+            await DbContext.BeerSorts.AddAsync(new BeerSort { Name = "Lager" });
+            await DbContext.SaveChangesAsync();
+
+            var query = new ListBeerSortsQuery { Page = 1, PageSize = 10, Name = "Stout" };
+            var handler = new ListBeerSortsQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Single(result.Value.Results);
+            Assert.Equal("Stout", result.Value.Results.First().Name);
         }
 
         // === DELETE TESTS ===

@@ -2,9 +2,11 @@
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Features.BeerBatches
 {
+    [ExcludeFromCodeCoverage]
     public class SaveBeerBatchCommand : IRequest<OperationResult>, ITransactional
     {
         public int Id { get; set; }

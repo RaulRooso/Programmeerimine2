@@ -81,6 +81,27 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Equal(5, result.Value.Results.Count);
         }
 
+        [Fact]
+        public async Task List_should_filter_by_name_when_search_term_is_provided()
+        {
+            // Arrange
+            var batchId = await SetupParentBatch(); // Use your existing helper
+            await DbContext.Ingredients.AddAsync(new Ingredient { Name = "Hops", Unit = "g", BeerBatchId = batchId });
+            await DbContext.Ingredients.AddAsync(new Ingredient { Name = "Malt", Unit = "kg", BeerBatchId = batchId });
+            await DbContext.SaveChangesAsync();
+
+            var query = new ListIngredientsQuery { Page = 1, PageSize = 10, Name = "Hops" };
+            var handler = new ListIngredientsQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Single(result.Value.Results);
+            Assert.Equal("Hops", result.Value.Results.First().Name);
+        }
+
         // === DELETE TESTS ===
 
         [Fact]

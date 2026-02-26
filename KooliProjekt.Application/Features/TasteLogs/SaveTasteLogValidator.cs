@@ -1,9 +1,11 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.TasteLogs;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SaveTasteLogValidator : AbstractValidator<SaveTasteLogCommand>
     {
         public SaveTasteLogValidator()

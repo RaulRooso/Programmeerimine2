@@ -2,9 +2,11 @@
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Features.BatchLogs
 {
+    [ExcludeFromCodeCoverage]
     public class SaveBatchLogCommand : IRequest<OperationResult>, ITransactional
     {
         public int Id { get; set; }

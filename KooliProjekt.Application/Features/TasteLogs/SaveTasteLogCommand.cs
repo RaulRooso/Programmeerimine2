@@ -2,9 +2,11 @@
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Features.TasteLogs
 {
+    [ExcludeFromCodeCoverage]
     public class SaveTasteLogCommand : IRequest<OperationResult>, ITransactional
     {
         public int Id { get; set; }

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Data
 {
+    [ExcludeFromCodeCoverage]
     public class TasteLog
     {
         public int Id { get; set; }

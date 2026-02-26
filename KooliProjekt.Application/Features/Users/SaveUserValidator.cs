@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.Users;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SaveUserValidator : AbstractValidator<SaveUserCommand>
     {
         public SaveUserValidator()

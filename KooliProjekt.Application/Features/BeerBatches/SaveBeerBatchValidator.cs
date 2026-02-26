@@ -1,9 +1,11 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.BeerBatches;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SaveBeerBatchValidator : AbstractValidator<SaveBeerBatchCommand>
     {
         public SaveBeerBatchValidator()

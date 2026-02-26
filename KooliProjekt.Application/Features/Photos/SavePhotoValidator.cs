@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.Photos;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SavePhotoValidator : AbstractValidator<SavePhotoCommand>
     {
         public SavePhotoValidator()

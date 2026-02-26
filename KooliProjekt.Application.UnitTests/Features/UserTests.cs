@@ -54,6 +54,26 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Equal(4, result.Value.RowCount);
         }
 
+        [Fact]
+        public async Task List_should_filter_by_username_when_search_term_is_provided()
+        {
+            // Arrange
+            await DbContext.Users.AddAsync(new User { Username = "AdminUser" });
+            await DbContext.Users.AddAsync(new User { Username = "GuestUser" });
+            await DbContext.SaveChangesAsync();
+
+            var query = new ListUsersQuery { Page = 1, PageSize = 10, Username = "Admin" };
+            var handler = new ListUsersQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Single(result.Value.Results);
+            Assert.Equal("AdminUser", result.Value.Results.First().Username);
+        }
+
         // === DELETE TESTS ===
 
         [Fact]

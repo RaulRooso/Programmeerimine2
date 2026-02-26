@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.Ingredients;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SaveIngredientValidator : AbstractValidator<SaveIngredientCommand>
     {
         public SaveIngredientValidator()

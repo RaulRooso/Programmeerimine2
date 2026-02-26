@@ -82,6 +82,27 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Equal(5, result.Value.Results.Count);
         }
 
+        [Fact]
+        public async Task List_should_filter_by_description_when_search_term_is_provided()
+        {
+            // Arrange
+            var relations = await SetupRelations(); // Use your log setup helper
+            await DbContext.BatchLogs.AddAsync(new BatchLog { Description = "Mash started", BeerBatchId = relations.BatchId });
+            await DbContext.BatchLogs.AddAsync(new BatchLog { Description = "Boil started", BeerBatchId = relations.BatchId });
+            await DbContext.SaveChangesAsync();
+
+            var query = new ListBatchLogsQuery { Page = 1, PageSize = 10, Description = "Mash" };
+            var handler = new ListBatchLogsQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Single(result.Value.Results);
+            Assert.Contains("Mash", result.Value.Results.First().Description);
+        }
+
         // === DELETE TESTS ===
 
         [Fact]

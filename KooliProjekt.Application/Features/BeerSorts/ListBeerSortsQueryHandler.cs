@@ -1,14 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using KooliProjekt.Application.Data;
 using KooliProjekt.Application.Infrastructure.Paging;
 using KooliProjekt.Application.Infrastructure.Results;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace KooliProjekt.Application.Features.BeerSorts
 {
@@ -18,18 +15,34 @@ namespace KooliProjekt.Application.Features.BeerSorts
 
         public ListBeerSortsQueryHandler(ApplicationDbContext dbContext)
         {
-            _dbContext = dbContext;
+            _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         }
 
         public async Task<OperationResult<PagedResult<BeerSort>>> Handle(ListBeerSortsQuery request, CancellationToken cancellationToken)
         {
+            if (request == null)
+            {
+                throw new ArgumentNullException(nameof(request));
+            }
+
             var result = new OperationResult<PagedResult<BeerSort>>();
-            Console.WriteLine("----");
-            Console.WriteLine("sort list query handler enne p2ringu tegemist");
-            Console.WriteLine("----");
-            result.Value = await _dbContext
-                .BeerSorts
-                .OrderBy(b => b.Name)
+
+            if (request.Page <= 0 || request.PageSize <= 0)
+            {
+                return result;
+            }
+
+            var query = _dbContext.BeerSorts.AsQueryable();
+
+            // Search logic matching teacher's Title search
+            if (!string.IsNullOrEmpty(request.Name))
+            {
+                query = query.Where(x => x.Name.Contains(request.Name));
+            }
+
+            // Direct execution on the entity query, no .Select() mapping
+            result.Value = await query
+                .OrderBy(x => x.Name)
                 .GetPagedAsync(request.Page, request.PageSize);
 
             return result;

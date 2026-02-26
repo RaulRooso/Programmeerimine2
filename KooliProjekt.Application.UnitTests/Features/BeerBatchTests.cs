@@ -76,6 +76,28 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Equal(5, result.Value.RowCount);
         }
 
+        [Fact]
+        public async Task List_should_filter_by_description_when_search_term_is_provided()
+        {
+            // Arrange
+            var sort = new BeerSort { Name = "Test Sort" };
+            await DbContext.BeerSorts.AddAsync(sort);
+            await DbContext.BeerBatches.AddAsync(new BeerBatch { Description = "First Batch", BeerSort = sort, Date = DateTime.Now });
+            await DbContext.BeerBatches.AddAsync(new BeerBatch { Description = "Target Batch", BeerSort = sort, Date = DateTime.Now });
+            await DbContext.SaveChangesAsync();
+
+            var query = new ListBeerBatchesQuery { Page = 1, PageSize = 10, Description = "Target" };
+            var handler = new ListBeerBatchesQueryHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            // Assert
+            Assert.NotNull(result.Value);
+            Assert.Single(result.Value.Results);
+            Assert.Equal("Target Batch", result.Value.Results.First().Description);
+        }
+
         // === DELETE TESTS ===
 
         [Fact]

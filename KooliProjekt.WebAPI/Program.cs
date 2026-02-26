@@ -67,3 +67,5 @@ namespace KooliProjekt.WebAPI
         }
     }
 }
+
+public partial class Program { }

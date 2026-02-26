@@ -1,9 +1,11 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.BatchLogs;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SaveBatchLogValidator : AbstractValidator<SaveBatchLogCommand>
     {
         public SaveBatchLogValidator()

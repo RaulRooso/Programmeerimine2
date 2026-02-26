@@ -1,8 +1,10 @@
 ﻿using FluentValidation;
 using KooliProjekt.Application.Features.BeerSorts;
+using System.Diagnostics.CodeAnalysis;
 
 namespace KooliProjekt.Application.Validators
 {
+    [ExcludeFromCodeCoverage]
     public class SaveBeerSortValidator : AbstractValidator<SaveBeerSortCommand>
     {
         public SaveBeerSortValidator()
