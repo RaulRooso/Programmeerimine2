@@ -1,12 +1,14 @@
-﻿using System;
-using System.Net;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Features.BatchLogs;
 using KooliProjekt.Application.Infrastructure.Paging;
 using KooliProjekt.Application.Infrastructure.Results;
 using KooliProjekt.IntegrationTests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace KooliProjekt.IntegrationTests
@@ -17,7 +19,7 @@ namespace KooliProjekt.IntegrationTests
         [Fact]
         public async Task List_should_return_data_when_logs_exist()
         {
-            // Arrange: We need a User and a BeerBatch because BatchLog depends on them
+            // Arrange
             var user = new User { Username = "tester", Email = "test@test.com" };
             var beerSort = new BeerSort { Name = "Test Sort" };
             await DbContext.AddAsync(user);
@@ -28,13 +30,7 @@ namespace KooliProjekt.IntegrationTests
             await DbContext.AddAsync(batch);
             await DbContext.SaveChangesAsync();
 
-            var log = new BatchLog
-            {
-                BeerBatchId = batch.Id,
-                UserId = user.Id,
-                Date = DateTime.Now,
-                Description = "Everything is bubbling nicely"
-            };
+            var log = new BatchLog { BeerBatchId = batch.Id, UserId = user.Id, Date = DateTime.Now, Description = "Bubbling" };
             await DbContext.AddAsync(log);
             await DbContext.SaveChangesAsync();
 
@@ -50,7 +46,39 @@ namespace KooliProjekt.IntegrationTests
         }
 
         [Fact]
-        public async Task Delete_should_return_ok_when_successful()
+        public async Task Save_should_add_new_batch_log()
+        {
+            // Arrange
+            var user = new User { Username = "logger" };
+            var beerSort = new BeerSort { Name = "Test Sort" };
+            await DbContext.AddAsync(user);
+            await DbContext.AddAsync(beerSort);
+            await DbContext.SaveChangesAsync();
+            var batch = new BeerBatch { BeerSortId = beerSort.Id, Date = DateTime.Now };
+            await DbContext.AddAsync(batch);
+            await DbContext.SaveChangesAsync();
+
+            var url = "/api/BatchLogs/Save";
+            var command = new SaveBatchLogCommand
+            {
+                Id = 0,
+                BeerBatchId = batch.Id,
+                UserId = user.Id,
+                Date = DateTime.Now,
+                Description = "New Log"
+            };
+
+            // Act
+            var response = await Client.PostAsJsonAsync(url, command);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var saved = await DbContext.BatchLogs.FirstOrDefaultAsync(x => x.Description == "New Log");
+            Assert.NotNull(saved);
+        }
+
+        [Fact]
+        public async Task Delete_should_remove_existing_batch_log()
         {
             // Arrange
             var user = new User { Username = "deleter" };
@@ -58,7 +86,6 @@ namespace KooliProjekt.IntegrationTests
             await DbContext.AddAsync(user);
             await DbContext.AddAsync(beerSort);
             await DbContext.SaveChangesAsync();
-
             var batch = new BeerBatch { BeerSortId = beerSort.Id, Date = DateTime.Now };
             await DbContext.AddAsync(batch);
             await DbContext.SaveChangesAsync();
@@ -67,10 +94,15 @@ namespace KooliProjekt.IntegrationTests
             await DbContext.AddAsync(log);
             await DbContext.SaveChangesAsync();
 
-            var url = $"/api/BatchLogs/Delete?Id={log.Id}";
+            var url = "/api/BatchLogs/Delete";
+            var command = new DeleteBatchLogCommand { Id = log.Id };
+            var request = new HttpRequestMessage(HttpMethod.Delete, url)
+            {
+                Content = JsonContent.Create(command)
+            };
 
             // Act
-            var response = await Client.DeleteAsync(url);
+            var response = await Client.SendAsync(request);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);

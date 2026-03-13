@@ -85,7 +85,7 @@ namespace KooliProjekt.Application.UnitTests.Features
         public async Task List_should_filter_by_name_when_search_term_is_provided()
         {
             // Arrange
-            var batchId = await SetupParentBatch(); // Use your existing helper
+            var batchId = await SetupParentBatch(); // Use existing helper
             await DbContext.Ingredients.AddAsync(new Ingredient { Name = "Hops", Unit = "g", BeerBatchId = batchId });
             await DbContext.Ingredients.AddAsync(new Ingredient { Name = "Malt", Unit = "kg", BeerBatchId = batchId });
             await DbContext.SaveChangesAsync();
@@ -101,6 +101,37 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Single(result.Value.Results);
             Assert.Equal("Hops", result.Value.Results.First().Name);
         }
+
+
+        [Fact]
+        public async Task List_should_return_empty_result_if_pagination_is_invalid()
+        {
+            // Fixes: if (request.Page <= 0 || request.PageSize <= 0)
+            var query = new ListIngredientsQuery { Page = 0, PageSize = 10 };
+            var handler = new ListIngredientsQueryHandler(DbContext);
+
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            Assert.Null(result.Value);
+            Assert.False(result.HasErrors);
+        }
+
+        //[Fact]
+        //public async Task List_should_not_filter_if_name_is_null_or_empty()
+        //{
+        //    // Fixes the "False" branch of the string.IsNullOrEmpty(request.Name) check
+        //    var batchId = await SetupParentBatch();
+        //    await DbContext.Ingredients.AddAsync(new Ingredient { Name = "Water", Unit = "L", BeerBatchId = batchId });
+        //    await DbContext.SaveChangesAsync();
+
+        //    var query = new ListIngredientsQuery { Page = 1, PageSize = 10, Name = "" };
+        //    var handler = new ListIngredientsQueryHandler(DbContext);
+
+        //    var result = await handler.Handle(query, CancellationToken.None);
+
+        //    Assert.NotNull(result.Value);
+        //    Assert.NotEmpty(result.Value.Results);
+        //}
 
         // === DELETE TESTS ===
 
@@ -122,6 +153,40 @@ namespace KooliProjekt.Application.UnitTests.Features
 
             // Assert
             Assert.False(exists);
+        }
+
+        [Fact]
+        public async Task Delete_should_throw_exception_if_request_is_null()
+        {
+            // Fixes: if (request == null)
+            var handler = new DeleteIngredientCommandHandler(DbContext);
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                handler.Handle(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_id_is_invalid()
+        {
+            // Fixes: if (request.Id <= 0)
+            var command = new DeleteIngredientCommand { Id = 0 };
+            var handler = new DeleteIngredientCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_item_not_found()
+        {
+            // Fixes: if (item == null)
+            var command = new DeleteIngredientCommand { Id = 9999 };
+            var handler = new DeleteIngredientCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
         }
 
         // === SAVE TESTS ===
@@ -149,6 +214,46 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.False(result.HasErrors);
             Assert.NotNull(saved);
             Assert.Equal(batchId, saved.BeerBatchId);
+        }
+
+        [Fact]
+        public async Task Save_should_update_existing_ingredient()
+        {
+            // Arrange
+            var batchId = await SetupParentBatch();
+
+            // Create the initial ingredient to be updated
+            var existing = new Ingredient
+            {
+                Name = "Old Malt",
+                Unit = "kg",
+                Quantity = 10,
+                BeerBatchId = batchId
+            };
+            await DbContext.Ingredients.AddAsync(existing);
+            await DbContext.SaveChangesAsync();
+
+            var command = new SaveIngredientCommand
+            {
+                Id = existing.Id, // This triggers the 'else' block!
+                Name = "New Malt",
+                Unit = "kg",
+                Quantity = 15,
+                UnitPrice = 2.5m,
+                BeerBatchId = batchId
+            };
+            var handler = new SaveIngredientCommandHandler(DbContext);
+
+            // Act
+            await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            DbContext.ChangeTracker.Clear(); // Clear cache to force a fresh DB read
+            var updated = await DbContext.Ingredients.FindAsync(existing.Id);
+
+            Assert.NotNull(updated);
+            Assert.Equal("New Malt", updated.Name);
+            Assert.Equal(15, updated.Quantity);
         }
     }
 }

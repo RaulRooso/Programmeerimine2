@@ -157,6 +157,40 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.False(exists);
         }
 
+        [Fact]
+        public async Task Delete_should_throw_exception_if_request_is_null()
+        {
+            // Fixes: if (request == null)
+            var handler = new DeleteBeerSortCommandHandler(DbContext);
+
+            await Assert.ThrowsAsync<ArgumentNullException>(() =>
+                handler.Handle(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_id_is_invalid()
+        {
+            // Fixes: if (request.Id <= 0)
+            var command = new DeleteBeerSortCommand { Id = 0 };
+            var handler = new DeleteBeerSortCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_item_not_found()
+        {
+            // Fixes: if (item == null)
+            var command = new DeleteBeerSortCommand { Id = 999 };
+            var handler = new DeleteBeerSortCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+        }
+
         // === SAVE TESTS ===
 
         [Fact]

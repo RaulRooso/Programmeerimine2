@@ -1,12 +1,14 @@
-﻿using System;
-using System.Net;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
-using KooliProjekt.Application.Data;
+﻿using KooliProjekt.Application.Data;
+using KooliProjekt.Application.Features.Photos;
 using KooliProjekt.Application.Infrastructure.Paging;
 using KooliProjekt.Application.Infrastructure.Results;
 using KooliProjekt.IntegrationTests.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace KooliProjekt.IntegrationTests
@@ -20,17 +22,14 @@ namespace KooliProjekt.IntegrationTests
             // Arrange
             var beerSort = new BeerSort { Name = "Stout", Description = "Dark" };
             await DbContext.AddAsync(beerSort);
-            await DbContext.SaveChangesAsync();
-
-            var batch = new BeerBatch { BeerSortId = beerSort.Id, Date = DateTime.Now };
+            var batch = new BeerBatch { BeerSort = beerSort, Date = DateTime.Now };
             await DbContext.AddAsync(batch);
-            await DbContext.SaveChangesAsync();
 
             var photo = new Photo
             {
-                BeerBatchId = batch.Id,
+                BeerBatch = batch,
                 Description = "Fermentation bubble view",
-                FilePath = "uploads/test-photo.jpg" // Required field
+                FilePath = "uploads/test-photo.jpg"
             };
             await DbContext.AddAsync(photo);
             await DbContext.SaveChangesAsync();
@@ -47,25 +46,55 @@ namespace KooliProjekt.IntegrationTests
         }
 
         [Fact]
-        public async Task Delete_should_remove_photo_record_from_database()
+        public async Task Save_should_add_new_photo()
+        {
+            // Arrange
+            var beerSort = new BeerSort { Name = "IPA" };
+            await DbContext.AddAsync(beerSort);
+            var batch = new BeerBatch { BeerSort = beerSort, Date = DateTime.Now };
+            await DbContext.AddAsync(batch);
+            await DbContext.SaveChangesAsync();
+
+            var url = "/api/Photos/Save";
+            var command = new SavePhotoCommand
+            {
+                Id = 0,
+                BeerBatchId = batch.Id,
+                Description = "New Brew Day Photo",
+                FilePath = "brewing.jpg"
+            };
+
+            // Act
+            var response = await Client.PostAsJsonAsync(url, command);
+
+            // Assert
+            response.EnsureSuccessStatusCode();
+            var saved = await DbContext.Photos.FirstOrDefaultAsync(x => x.Description == "New Brew Day Photo");
+            Assert.NotNull(saved);
+        }
+
+        [Fact]
+        public async Task Delete_should_remove_existing_photo()
         {
             // Arrange
             var beerSort = new BeerSort { Name = "Porter" };
             await DbContext.AddAsync(beerSort);
-            await DbContext.SaveChangesAsync();
-
-            var batch = new BeerBatch { BeerSortId = beerSort.Id, Date = DateTime.Now };
+            var batch = new BeerBatch { BeerSort = beerSort, Date = DateTime.Now };
             await DbContext.AddAsync(batch);
-            await DbContext.SaveChangesAsync();
-
-            var photo = new Photo { BeerBatchId = batch.Id, FilePath = "temp.jpg" };
+            var photo = new Photo { Description = "Delete Me", BeerBatch = batch, FilePath = "temp.jpg" };
             await DbContext.AddAsync(photo);
             await DbContext.SaveChangesAsync();
 
-            var url = $"/api/Photos/Delete?Id={photo.Id}";
+            var url = "/api/Photos/Delete";
+            var command = new DeletePhotoCommand { Id = photo.Id };
+
+            var request = new HttpRequestMessage(HttpMethod.Delete, url)
+            {
+                Content = JsonContent.Create(command)
+            };
 
             // Act
-            var response = await Client.DeleteAsync(url);
+            var response = await Client.SendAsync(request);
 
             // Assert
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);

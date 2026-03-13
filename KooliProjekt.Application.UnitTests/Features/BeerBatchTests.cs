@@ -98,6 +98,19 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Equal("Target Batch", result.Value.Results.First().Description);
         }
 
+        [Fact]
+        public async Task List_should_return_empty_result_if_pagination_is_invalid()
+        {
+            // Fixes the early return branch for Page/PageSize <= 0
+            var query = new ListBeerBatchesQuery { Page = 0, PageSize = 10 };
+            var handler = new ListBeerBatchesQueryHandler(DbContext);
+
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            Assert.Null(result.Value);
+            Assert.False(result.HasErrors);
+        }
+
         // === DELETE TESTS ===
 
         [Fact]
@@ -121,6 +134,20 @@ namespace KooliProjekt.Application.UnitTests.Features
 
             // Assert
             Assert.False(exists);
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_batch_does_not_exist()
+        {
+            // Arrange
+            var command = new DeleteBeerBatchCommand { Id = 9999 };
+            var handler = new DeleteBeerBatchCommandHandler(DbContext);
+
+            // Act
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            Assert.False(result.HasErrors);
         }
 
         // === SAVE TESTS ===
@@ -150,6 +177,36 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.False(result.HasErrors);
             Assert.NotNull(saved);
             Assert.Equal(beerSort.Id, saved.BeerSortId);
+        }
+
+        [Fact]
+        public async Task Save_should_execute_update_logic_when_id_is_not_zero()
+        {
+            // 1. Arrange: Put a batch in the DB so we have something to find
+            var beerSort = new BeerSort { Name = "Stout" };
+            await DbContext.BeerSorts.AddAsync(beerSort);
+            await DbContext.SaveChangesAsync();
+
+            var existingBatch = new BeerBatch { BeerSortId = beerSort.Id, Date = DateTime.Now };
+            await DbContext.BeerBatches.AddAsync(existingBatch);
+            await DbContext.SaveChangesAsync();
+
+            // 2. Setup the Command with the existing ID
+            var command = new SaveBeerBatchCommand
+            {
+                Id = existingBatch.Id, // This triggers the 'else' block
+                BeerSortId = beerSort.Id,
+                Date = DateTime.Now,
+                Description = "Updated Description"
+            };
+            var handler = new SaveBeerBatchCommandHandler(DbContext);
+
+            // 3. Act
+            await handler.Handle(command, CancellationToken.None);
+
+            // 4. Assert
+            var updated = await DbContext.BeerBatches.FindAsync(existingBatch.Id);
+            Assert.Equal("Updated Description", updated.Description);
         }
     }
 }

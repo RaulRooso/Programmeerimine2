@@ -1,5 +1,6 @@
 ﻿using KooliProjekt.Application.Data;
 using KooliProjekt.Application.Dto;
+using KooliProjekt.Application.Features.TasteLogs;
 using KooliProjekt.Application.Features.Users;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
@@ -74,6 +75,19 @@ namespace KooliProjekt.Application.UnitTests.Features
             Assert.Equal("AdminUser", result.Value.Results.First().Username);
         }
 
+        [Fact]
+        public async Task List_should_return_empty_result_if_pagination_is_invalid()
+        {
+            // Fixes: if (request.Page <= 0 || request.PageSize <= 0)
+            var query = new ListUsersQuery { Page = 0, PageSize = 10 };
+            var handler = new ListUsersQueryHandler(DbContext);
+
+            var result = await handler.Handle(query, CancellationToken.None);
+
+            Assert.Null(result.Value);
+            Assert.False(result.HasErrors);
+        }
+
         // === DELETE TESTS ===
 
         [Fact]
@@ -93,6 +107,38 @@ namespace KooliProjekt.Application.UnitTests.Features
 
             // Assert
             Assert.False(exists);
+        }
+
+        [Fact]
+        public async Task Delete_should_throw_exception_if_request_is_null()
+        {
+            // Covers: if (request == null)
+            var handler = new DeleteUserCommandHandler(DbContext);
+            await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_id_is_invalid()
+        {
+            // Covers: if (request.Id <= 0)
+            var command = new DeleteUserCommand { Id = 0 };
+            var handler = new DeleteUserCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_item_not_found()
+        {
+            // Covers: if (item == null)
+            var command = new DeleteUserCommand { Id = 999 };
+            var handler = new DeleteUserCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
         }
 
         // === SAVE TESTS ===
@@ -116,6 +162,34 @@ namespace KooliProjekt.Application.UnitTests.Features
             // Assert
             Assert.False(result.HasErrors);
             Assert.NotNull(saved);
+        }
+
+        [Fact]
+        public async Task Save_should_update_existing_user()
+        {
+            // Arrange: Create a user first so we have one to update
+            var existingUser = new User { Username = "old_name", Email = "old@brew.com" };
+            await DbContext.Users.AddAsync(existingUser);
+            await DbContext.SaveChangesAsync();
+
+            var command = new SaveUserCommand
+            {
+                Id = existingUser.Id, // This triggers the 'else' block
+                Username = "updated_name",
+                Email = "updated@brew.com"
+            };
+            var handler = new SaveUserCommandHandler(DbContext);
+
+            // Act
+            await handler.Handle(command, CancellationToken.None);
+
+            // Assert: Clear the tracker to ensure we fetch fresh data from the DB
+            DbContext.ChangeTracker.Clear();
+            var updated = await DbContext.Users.FindAsync(existingUser.Id);
+
+            Assert.NotNull(updated);
+            Assert.Equal("updated_name", updated.Username);
+            Assert.Equal("updated@brew.com", updated.Email);
         }
     }
 }

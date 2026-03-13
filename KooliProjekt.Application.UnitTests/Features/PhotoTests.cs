@@ -99,6 +99,37 @@ namespace KooliProjekt.Application.UnitTests.Features
             // Assert
             Assert.False(exists);
         }
+        [Fact]
+        public async Task Delete_should_throw_exception_if_request_is_null()
+        {
+            // Fixes: if (request == null)
+            var handler = new DeletePhotoCommandHandler(DbContext);
+            await Assert.ThrowsAsync<ArgumentNullException>(() => handler.Handle(null, CancellationToken.None));
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_id_is_invalid()
+        {
+            // Fixes: if (request.Id <= 0)
+            var command = new DeletePhotoCommand { Id = 0 };
+            var handler = new DeletePhotoCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+        }
+
+        [Fact]
+        public async Task Delete_should_return_early_if_item_not_found()
+        {
+            // Fixes: if (item == null)
+            var command = new DeletePhotoCommand { Id = 999 };
+            var handler = new DeletePhotoCommandHandler(DbContext);
+
+            var result = await handler.Handle(command, CancellationToken.None);
+
+            Assert.False(result.HasErrors);
+        }
 
         // === SAVE TESTS ===
 
@@ -123,6 +154,41 @@ namespace KooliProjekt.Application.UnitTests.Features
             // Assert
             Assert.False(result.HasErrors);
             Assert.NotNull(saved);
+        }
+
+        [Fact]
+        public async Task Save_should_update_existing_photo()
+        {
+            // Arrange
+            var batchId = await SetupParentBatch();
+            var existingPhoto = new Photo
+            {
+                BeerBatchId = batchId,
+                FilePath = "old.jpg",
+                Description = "Old Photo"
+            };
+            await DbContext.Photos.AddAsync(existingPhoto);
+            await DbContext.SaveChangesAsync();
+
+            var command = new SavePhotoCommand
+            {
+                Id = existingPhoto.Id, // Triggers the 'else' block
+                BeerBatchId = batchId,
+                FilePath = "new.jpg",
+                Description = "Updated Photo"
+            };
+            var handler = new SavePhotoCommandHandler(DbContext);
+
+            // Act
+            await handler.Handle(command, CancellationToken.None);
+
+            // Assert
+            DbContext.ChangeTracker.Clear();
+            var updated = await DbContext.Photos.FindAsync(existingPhoto.Id);
+
+            Assert.NotNull(updated);
+            Assert.Equal("new.jpg", updated.FilePath);
+            Assert.Equal("Updated Photo", updated.Description);
         }
     }
 }
